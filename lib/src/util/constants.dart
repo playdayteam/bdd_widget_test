@@ -10,10 +10,12 @@ const setUpAllHookName = 'beforeAll';
 const tearDownAllHookName = 'afterAll';
 
 //https://api.flutter.dev/flutter/flutter_test/setUpAll.html
-const setUpAllCallbackName = 'setUpAll';
+// FIX for patrol
+const setUpAllCallbackName = 'patrolSetUp';
 
 //https://api.flutter.dev/flutter/flutter_test/tearDownAll.html
-const tearDownAllCallbackName = 'tearDownAll';
+// FIX for patrol
+const tearDownAllCallbackName = 'patrolTearDown';
 
 const testMethodNameTag = '@testMethodName:';
 
