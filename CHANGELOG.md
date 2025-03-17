@@ -1,3 +1,12 @@
+## [1.8.1] - Fix hook path on windows
+
+* Fix hook path on windows
+* Update README - Replace Ruby syntax with Gherkin syntax (by @lsaudon)
+
+## [1.8.0] - Dependency updates
+
+* Update `dart_style` constraint to `^3.0.0`
+
 ## [1.7.6] - Add relativeToTestFolder
 
 * Add `relativeToTestFolder` option to control the generated step file location
