@@ -5,10 +5,10 @@ repository: https://github.com/olexale/bdd_widget_test
 issue_tracker: https://github.com/olexale/bdd_widget_test/issues
 
 environment:
-  sdk: ">=2.18.0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
-  build: ^2.2.1
+  build: ^3.0.0
   build_config: ^1.0.0
   characters: ^1.2.0
   collection: ^1.15.0
@@ -19,11 +19,11 @@ dependencies:
     sdk: flutter
   flutter_test:
     sdk: flutter
-  meta: ^1.7.0
+  meta: ^1.16.0
   path: ^1.8.0
   yaml: ^3.1.0
 
 dev_dependencies:
   build_runner: ^2.4.10
-  build_test: ^2.2.3
+  build_test: ^3.3.0
   very_good_analysis: ^7.0.0
