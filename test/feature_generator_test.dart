@@ -4,8 +4,8 @@ import 'package:bdd_widget_test/src/util/isolate_helper.dart';
 import 'package:build/build.dart';
 import 'package:build_test/build_test.dart';
 import 'package:file/memory.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 import 'util/testing_data.dart';
 
@@ -21,8 +21,9 @@ void main() {
   });
 
   test('no customization', () async {
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -37,20 +38,21 @@ void main() {
         '  });\n'
         '}\n';
     const scenario = 'simple';
-    final content = await generate(scenario);
-    expect(content, expected);
+    await generate(scenario, expected);
   });
 
   test('existing step should not regenerate', () async {
     const scenario = 'existing_step';
-    final dummyStepPath =
-        p.join(getStepFolderName(scenario), 'the_app_is_running.dart');
+    final dummyStepPath = p.join(
+      getStepFolderName(scenario),
+      'the_app_is_running.dart',
+    );
     const expectedFileContent = '// existing step';
     fs.file(dummyStepPath)
       ..createSync(recursive: true)
       ..writeAsStringSync(expectedFileContent);
 
-    await generate(scenario);
+    await generate(scenario, null);
 
     final content = fs.file(dummyStepPath).readAsStringSync();
     expect(content, expectedFileContent);
@@ -66,8 +68,11 @@ relativeToTestFolder: false
       ..writeAsStringSync(bddOptions);
 
     const scenario = 'existing_step_outside_test_folder';
-    final dummyStepPath =
-        p.join(fs.currentDirectory.path, 'my_steps', 'the_app_is_running.dart');
+    final dummyStepPath = p.join(
+      fs.currentDirectory.path,
+      'my_steps',
+      'the_app_is_running.dart',
+    );
     fs.file(dummyStepPath)
       ..createSync(recursive: true)
       ..writeAsStringSync('dummy');
@@ -75,8 +80,9 @@ relativeToTestFolder: false
     // note: the import is so weird because p.relative() can not
     // find intersection between two paths (however, somehow it works)
     // not a problem in the real world
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -91,9 +97,7 @@ relativeToTestFolder: false
         '  });\n'
         '}\n';
 
-    final content = await generate(scenario);
-
-    expect(content, expected);
+    await generate(scenario, expected);
   });
 
   test('custom bdd_options', () async {
@@ -102,16 +106,20 @@ stepFolderName: ./scenarios
 testMethodName: customName
 addHooks: true
 hookFolderName: hooksFolder
+customHeaders:
+  - "import 'package:flutter_test/flutter_test.dart';"
+  - "import 'package:my_project/test_helpers.dart';"
 ''';
     fs.file('bdd_options.yaml')
       ..createSync()
       ..writeAsStringSync(bddOptions);
 
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
-        "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
+        "import 'package:my_project/test_helpers.dart';\n"
         '\n'
         "import '../../hooksFolder/hooks.dart';\n"
         "import './scenarios/the_app_is_running.dart';\n"
@@ -139,7 +147,7 @@ hookFolderName: hooksFolder
         '      try {\n'
         "        await beforeEach('''Testing scenario''');\n"
         '        await theAppIsRunning(tester);\n'
-        '      } on TestFailure {\n'
+        '      } catch (_) {\n'
         '        success = false;\n'
         '        rethrow;\n'
         '      } finally {\n'
@@ -153,8 +161,7 @@ hookFolderName: hooksFolder
         '}\n';
 
     const scenario = 'options';
-    final content = await generate(scenario);
-    expect(content, expected);
+    await generate(scenario, expected);
   });
 
   test('non-valid include', () async {
@@ -165,7 +172,7 @@ hookFolderName: hooksFolder
 
     const scenario = 'options';
     expect(
-      () => generate(scenario),
+      () => generate(scenario, ''),
       throwsException,
     );
   });
@@ -187,8 +194,9 @@ testMethodName: customName
 stepFolderName: ./scenarios
 ''');
 
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -204,8 +212,7 @@ stepFolderName: ./scenarios
         '}\n';
 
     const scenario = 'options';
-    final content = await generate(scenario);
-    expect(content, expected);
+    await generate(scenario, expected);
   });
 
   test('nested includes', () async {
@@ -241,8 +248,9 @@ include: $externalYaml3
 stepFolderName: ./scenarios
 ''');
 
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -258,13 +266,13 @@ stepFolderName: ./scenarios
         '}\n';
 
     const scenario = 'options';
-    final content = await generate(
+    await generate(
       scenario,
+      expected,
       const BuilderOptions(<String, dynamic>{
         'include': externalYaml3,
       }),
     );
-    expect(content, expected);
   });
 
   test('Integration test with integration_test dependency', () async {
@@ -276,8 +284,9 @@ dev_dependencies:
     sdk: flutter
 ''');
 
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -296,8 +305,7 @@ dev_dependencies:
         '}\n';
 
     const scenario = 'integration';
-    final content = await generate(scenario, null, 'integration_test');
-    expect(content, expected);
+    await generate(scenario, expected, null, 'integration_test');
   });
 
   test('Integration test without integration_test dependency', () async {
@@ -307,8 +315,9 @@ dev_dependencies:
 dev_dependencies:
 ''');
 
-    const expected = '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
-        '// ignore_for_file: unused_import, directives_ordering\n'
+    const expected =
+        '// GENERATED CODE - DO NOT MODIFY BY HAND\n'
+        '// ignore_for_file: type=lint, type=warning\n'
         '\n'
         "import 'package:flutter/material.dart';\n"
         "import 'package:flutter_test/flutter_test.dart';\n"
@@ -324,16 +333,16 @@ dev_dependencies:
         '}\n';
 
     const scenario = 'integration';
-    final content = await generate(scenario, null, 'integration_test');
-    expect(content, expected);
+    await generate(scenario, expected, null, 'integration_test');
   });
 }
 
 // ----------------------------------------------------------------------------
 const pkgName = 'pkg';
 
-Future<String> generate(
-  String scenario, [
+Future<void> generate(
+  String scenario,
+  String? expectedOutput, [
   BuilderOptions? options,
   String testFolderName = 'test',
 ]) async {
@@ -343,22 +352,23 @@ Future<String> generate(
     '$pkgName|$path/sample.feature': minimalFeatureFile,
   };
 
-  final writer = InMemoryAssetWriter();
   await testBuilder(
     featureBuilder(options ?? BuilderOptions.empty),
     srcs,
     rootPackage: pkgName,
-    writer: writer,
-  );
-  return String.fromCharCodes(
-    writer.assets[AssetId(pkgName, '$path/sample_test.dart')] ?? [],
+    outputs:
+        expectedOutput != null
+            ? {
+              '$pkgName|$path/sample_test.dart': decodedMatches(expectedOutput),
+            }
+            : null,
   );
 }
 
 String getStepFolderName(String scenario) => p.joinAll([
-      fs.currentDirectory.path,
-      'test',
-      'builder_scenarios',
-      scenario,
-      'step',
-    ]);
+  fs.currentDirectory.path,
+  'test',
+  'builder_scenarios',
+  scenario,
+  'step',
+]);

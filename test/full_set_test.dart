@@ -1,12 +1,14 @@
 import 'package:bdd_widget_test/src/feature_file.dart';
 import 'package:bdd_widget_test/src/generator_options.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('fully custom test ', () {
     const featureFile = '''
+# This is a comment
 @customFeatureTag
 Feature: Counter
+    This is a comment too
     Background:
         Given the app is running
     After:
@@ -19,6 +21,7 @@ Feature: Counter
         Then I see {'0'} text
 Feature: Counter 2
     Background:
+    #One more comment
         Given the app is running
     Scenario: Initial counter value is 0
         Given the app is running
@@ -26,7 +29,7 @@ Feature: Counter 2
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 @Tags(['customFeatureTag'])
 import 'package:flutter/material.dart';
@@ -67,7 +70,7 @@ void main() {
         await theAppIsRunning(tester);
         await iRunCode(tester, 'func foo() {}; func bar() { print("hey!"); };');
         await iSeeText(tester, '0');
-      } on TestFailure {
+      } catch (_) {
         success = false;
         rethrow;
       } finally {
@@ -96,7 +99,7 @@ void main() {
       await beforeEach(\'\'\'Initial counter value is 0\'\'\' );
       await bddSetUp(tester);
       await theAppIsRunning(tester);
-      } on TestFailure {
+      } catch (_) {
         success = false;
         rethrow;
       } finally {

@@ -1,13 +1,13 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import './step/common/the_app_is_running.dart';
 import './step/i_do_not_see_text.dart';
-import 'package:bdd_widget_test/step/i_see_text.dart';
-import 'package:bdd_widget_test/step/i_tap_icon.dart';
+import './step/i_see_text.dart';
+import './step/i_tap_icon.dart';
 import './step/i_tap_icon_times.dart';
 
 void main() {
