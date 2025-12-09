@@ -1,5 +1,6 @@
 import 'package:bdd_widget_test/src/bdd_line.dart';
 import 'package:bdd_widget_test/src/data_table_parser.dart';
+import 'package:bdd_widget_test/src/generator_options.dart';
 import 'package:bdd_widget_test/src/hook_file.dart';
 import 'package:bdd_widget_test/src/scenario_generator.dart';
 import 'package:bdd_widget_test/src/step_file.dart';
@@ -16,10 +17,11 @@ String generateFeatureDart(
   bool includeIntegrationTestBinding,
   bool includeIntegrationTestImport,
   HookFile? hookFile,
+  GeneratorOptions generatorOptions,
 ) {
   final sb = StringBuffer();
   sb.writeln('// GENERATED CODE - DO NOT MODIFY BY HAND');
-  sb.writeln('// ignore_for_file: unused_import, directives_ordering');
+  sb.writeln('// ignore_for_file: type=lint, type=warning');
 
   sb.writeln();
   var featureTestMethodNameOverride = testMethodName;
@@ -29,8 +31,9 @@ String generateFeatureDart(
   final linesBeforeFeature =
       lines.takeWhile((value) => value.type != LineType.feature).toList();
 
-  final tagLines =
-      linesBeforeFeature.where((line) => line.type == LineType.tag);
+  final tagLines = linesBeforeFeature.where(
+    (line) => line.type == LineType.tag,
+  );
   final tags = <String>[];
   for (final line in tagLines) {
     final methodName = parseCustomTag(line.rawLine, testMethodNameTag);
@@ -51,16 +54,24 @@ String generateFeatureDart(
     sb.writeln("@Tags(['${tags.join("', '")}'])");
   }
 
-  for (final line
-      in linesBeforeFeature.where((line) => line.type != LineType.tag)) {
+  for (final line in linesBeforeFeature.where(
+    (line) => line.type != LineType.tag,
+  )) {
     sb.writeln(line.rawLine);
   }
 
   if (hasBddDataTable(lines)) {
     sb.writeln("import 'package:bdd_widget_test/data_table.dart' as bdd;");
   }
-  sb.writeln("import 'package:flutter/material.dart';");
-  sb.writeln("import 'package:flutter_test/flutter_test.dart';");
+
+  // Use custom headers if provided, otherwise use default imports
+  if (generatorOptions.customHeaders.isNotEmpty) {
+    generatorOptions.customHeaders.forEach(sb.writeln);
+  } else {
+    sb.writeln("import 'package:flutter/material.dart';");
+    sb.writeln("import 'package:flutter_test/flutter_test.dart';");
+  }
+
   if (includeIntegrationTestImport) {
     sb.writeln("import 'package:integration_test/integration_test.dart';");
   }
@@ -197,30 +208,28 @@ bool _parseBackground(
   List<BddLine> lines,
   String testerType,
   String testerName,
-) =>
-    _parseSetup(
-      sb,
-      lines,
-      LineType.background,
-      setUpMethodName,
-      testerType,
-      testerName,
-    );
+) => _parseSetup(
+  sb,
+  lines,
+  LineType.background,
+  setUpMethodName,
+  testerType,
+  testerName,
+);
 
 bool _parseAfter(
   StringBuffer sb,
   List<BddLine> lines,
   String testerType,
   String testerName,
-) =>
-    _parseSetup(
-      sb,
-      lines,
-      LineType.after,
-      tearDownMethodName,
-      testerType,
-      testerName,
-    );
+) => _parseSetup(
+  sb,
+  lines,
+  LineType.after,
+  tearDownMethodName,
+  testerType,
+  testerName,
+);
 
 bool _parseSetup(
   StringBuffer sb,
@@ -230,11 +239,13 @@ bool _parseSetup(
   String testerType,
   String testerName,
 ) {
-  final flattenDataTables = replaceDataTables(
-    lines.skipWhile((line) => line.type == LineType.tag).toList(),
-  ).toList();
-  var offset =
-      flattenDataTables.indexWhere((element) => element.type == elementType);
+  final flattenDataTables =
+      replaceDataTables(
+        lines.skipWhile((line) => line.type == LineType.tag).toList(),
+      ).toList();
+  var offset = flattenDataTables.indexWhere(
+    (element) => element.type == elementType,
+  );
   if (offset != -1) {
     sb.writeln('    Future<void> $title($testerType $testerName) async {');
     offset++;
@@ -259,9 +270,10 @@ void _parseFeature(
   String testMethodName,
   String testerName,
 ) {
-  final scenarios = _splitScenarios(
-    feature.skipWhile((value) => !_isNewScenario(value.type)).toList(),
-  ).toList();
+  final scenarios =
+      _splitScenarios(
+        feature.skipWhile((value) => !_isNewScenario(value.type)).toList(),
+      ).toList();
   for (final scenario in scenarios) {
     final scenarioTagLines =
         scenario.where((line) => line.type == LineType.tag).toList();
@@ -277,12 +289,14 @@ void _parseFeature(
       scenarioParamsTag,
     );
 
-    final flattenDataTables = replaceDataTables(
-      scenario.skipWhile((line) => line.type == LineType.tag).toList(),
-    ).toList();
-    final scenariosToParse = flattenDataTables.first.type == LineType.scenario
-        ? [flattenDataTables]
-        : generateScenariosFromScenarioOutline(flattenDataTables);
+    final flattenDataTables =
+        replaceDataTables(
+          scenario.skipWhile((line) => line.type == LineType.tag).toList(),
+        ).toList();
+    final scenariosToParse =
+        flattenDataTables.first.type == LineType.scenario
+            ? [flattenDataTables]
+            : generateScenariosFromScenarioOutline(flattenDataTables);
 
     for (final s in scenariosToParse) {
       parseScenario(

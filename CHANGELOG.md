@@ -1,3 +1,36 @@
+## [2.1.3] - Data table special characters fix
+
+* Make placeholder replacement function more context-aware to avoid replacing special characters inside data table cells
+
+## [2.1.2] - Gherkin comments support
+
+* Add support for Gherkin comments (lines starting with `#`)
+
+## [2.1.1] - Improve data table step detection
+
+* Fix data table step detection when combined with scenario outline
+
+## [2.1.0] - Update dependencies
+
+* Update min SDK to 3.7.0
+* Update build_runner and dependencies (by @lsaudon)
+* Remove Extra Curly Braces from Data Table Variables in Scenario Outlines (by @tide-khushal)
+
+## [2.0.1] - Custom headers support
+
+* Add `customHeaders` configuration option to include custom header lines (imports, comments, etc.) in all generated step files and feature files
+
+## [2.0.0] - Upgrade dependencies
+
+* **BREAKING CHANGE**: The package doesn't provide pre-built steps anymore. Steps will appear in the `step` folder.
+* Drop unused dependencies
+* Upgrade `build` dependency
+* Fix exceptions processing in hooks
+
+## [1.8.2] - Ignore linter warnings
+
+* Ignore all lint or warning rules in generated code by (@lsaudon)
+
 ## [1.8.1] - Fix hook path on windows
 
 * Fix hook path on windows

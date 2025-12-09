@@ -1,6 +1,6 @@
 import 'package:bdd_widget_test/src/feature_file.dart';
 import 'package:bdd_widget_test/src/generator_options.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('relative stepFolderName', () {
@@ -12,7 +12,7 @@ Feature: Testing feature
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,8 +32,9 @@ void main() {
       featureDir: 'test.feature',
       package: 'test',
       input: featureFile,
-      generatorOptions:
-          const GeneratorOptions(stepFolderName: '../../../custom_steps'),
+      generatorOptions: const GeneratorOptions(
+        stepFolderName: '../../../custom_steps',
+      ),
     );
     expect(feature.dartContent, expectedFeatureDart);
   });
@@ -47,7 +48,7 @@ Feature: Testing feature
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,7 +81,7 @@ Feature: Testing feature
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

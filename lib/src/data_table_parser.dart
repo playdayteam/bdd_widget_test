@@ -4,11 +4,13 @@ import 'package:bdd_widget_test/src/scenario_generator.dart';
 
 bool hasBddDataTable(List<BddLine> lines) {
   for (var index = 0; index < lines.length; index++) {
-    final isStep = lines[index].type == LineType.step ||
+    final isStep =
+        lines[index].type == LineType.step ||
         lines[index].type == LineType.dataTableStep;
     final isNextLineTable = isTable(lines: lines, index: index + 1);
-    final isExamplesFormatted = hasExamplesFormat(bddLine: lines[index]);
-    if (isStep && isNextLineTable && !isExamplesFormatted) {
+    if (isStep &&
+        isNextLineTable &&
+        !isDataTableExamples(lines: lines, index: index)) {
       return true;
     }
   }
@@ -17,13 +19,15 @@ bool hasBddDataTable(List<BddLine> lines) {
 
 Iterable<BddLine> replaceDataTables(List<BddLine> lines) sync* {
   for (var index = 0; index < lines.length; index++) {
-    final isStep = lines[index].type == LineType.step ||
+    final isStep =
+        lines[index].type == LineType.step ||
         lines[index].type == LineType.dataTableStep;
     final isNextLineTable = isTable(lines: lines, index: index + 1);
     if (isStep && isNextLineTable) {
-      final table = !hasExamplesFormat(bddLine: lines[index])
-          ? _createCucumberDataTable(lines: lines, index: index)
-          : _createDataTableFromExamples(lines: lines, index: index);
+      final table =
+          isDataTableExamples(lines: lines, index: index)
+              ? _createDataTableFromExamples(lines: lines, index: index)
+              : _createCucumberDataTable(lines: lines, index: index);
       yield* table;
       // skip the parsed table
       while (isTable(lines: lines, index: index + 1)) {
@@ -38,11 +42,43 @@ Iterable<BddLine> replaceDataTables(List<BddLine> lines) sync* {
 bool isTable({
   required List<BddLine> lines,
   required int index,
-}) =>
-    index < lines.length && lines[index].type == LineType.examples;
+}) => index < lines.length && lines[index].type == LineType.examples;
 
 bool hasExamplesFormat({required BddLine bddLine}) =>
     examplesRegExp.firstMatch(bddLine.rawLine) != null;
+
+/// Determines if the data table following the step at [index]
+/// is intended to be used as Examples (parameter expansion) rather than
+/// as a cucumber data table argument.
+///
+/// Heuristic: if the step contains placeholders like `<name>` and the first
+/// row of the following table contains headers that include ALL of those
+/// placeholder names, then treat the table as Examples; otherwise, treat it
+/// as a cucumber data table.
+bool isDataTableExamples({
+  required List<BddLine> lines,
+  required int index,
+}) {
+  final step = lines[index];
+  if (!hasExamplesFormat(bddLine: step)) return false;
+  final nextIsTable = isTable(lines: lines, index: index + 1);
+  if (!nextIsTable) return false;
+
+  final placeholders =
+      examplesRegExp
+          .allMatches(step.rawLine)
+          .map((m) => m.group(1)!.trim())
+          .where((e) => e.isNotEmpty)
+          .toSet();
+  if (placeholders.isEmpty) return false;
+
+  // Use the first table row as headers
+  final headers = _createRow(bddLine: lines[index + 1]).toSet();
+  if (headers.isEmpty) return false;
+
+  // Only treat as examples when all placeholders are present in headers
+  return placeholders.every(headers.contains);
+}
 
 List<String> _createRow({
   required BddLine bddLine,
@@ -75,8 +111,8 @@ Iterable<BddLine> _createDataTableFromExamples({
   final dataTable = [lines[index]];
   do {
     dataTable.add(lines[++index]);
-  } while (
-      index + 1 < lines.length && lines[index + 1].type == LineType.examples);
+  } while (index + 1 < lines.length &&
+      lines[index + 1].type == LineType.examples);
   final data = generateScenariosFromScenarioOutline([
     // pretend to be an Example section to re-use some logic
     BddLine.fromValue(LineType.exampleTitle, ''),

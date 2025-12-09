@@ -1,5 +1,5 @@
 import 'package:bdd_widget_test/src/feature_file.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Comments above features copy-paste into the target file', () {
@@ -13,9 +13,46 @@ Feature: Testing feature
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 // This is a comment
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import './step/the_app_is_running.dart';
+
+void main() {
+  group(\'\'\'Testing feature\'\'\', () {
+    testWidgets(\'\'\'Testing scenario\'\'\', (tester) async {
+      await theAppIsRunning(tester);
+    });
+  });
+}
+''';
+
+    final feature = FeatureFile(
+      featureDir: 'test.feature',
+      package: 'test',
+      input: featureFile,
+    );
+    expect(feature.dartContent, expectedFeatureDart);
+  });
+
+  test('Gherkin comments are ignored', () {
+    const featureFile = '''
+# This is a comment
+
+Feature: Testing feature
+  #One more comment
+  Scenario: Testing scenario
+# Another comment
+    Given the app is running
+''';
+
+    const expectedFeatureDart = '''
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,7 +93,7 @@ Feature: Testing feature 2
 
     const expectedFeatureDart = '''
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: unused_import, directives_ordering
+// ignore_for_file: type=lint, type=warning
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
