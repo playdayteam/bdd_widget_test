@@ -38,7 +38,7 @@ void parseScenario(
   }
 
   if (hasHooks) {
-    sb.writeln('      } on TestFailure {');
+    sb.writeln('      } catch (_) {');
     sb.writeln('        $testSuccessVariableName = false;');
     sb.writeln('        rethrow;');
   }
@@ -120,15 +120,91 @@ Iterable<BddLine> _processScenarioLines(
   for (final line in lines.skip(1)) {
     yield BddLine.fromValue(
       line.type,
-      _replacePlaceholders(line.value, examples),
+      _replacePlaceholders(
+        line.value,
+        line.type == LineType.dataTableStep,
+        examples,
+      ),
     );
   }
 }
 
-String _replacePlaceholders(String line, Map<String, String> example) {
-  var replaced = line;
-  for (final e in example.keys) {
-    replaced = replaced.replaceAll('<$e>', '{${example[e]}}');
+String _replacePlaceholders(
+  String line,
+  bool isDataTableStep,
+  Map<String, String> example,
+) {
+  // For data table steps, we want placeholders in the step text
+  // to become parameters (wrapped with {}), but placeholders inside the
+  // DataTable argument should be inlined as raw values.
+  if (isDataTableStep) {
+    const marker = '{const bdd.DataTable(';
+    final dataTableIndex = line.indexOf(marker);
+    if (dataTableIndex != -1) {
+      final head = line.substring(0, dataTableIndex);
+      final tail = line.substring(dataTableIndex);
+      var headReplaced = head;
+      var tailReplaced = tail;
+      for (final e in example.keys) {
+        headReplaced = headReplaced.replaceAll('<$e>', '{${example[e]}}');
+        tailReplaced = tailReplaced.replaceAll('<$e>', '${example[e]}');
+      }
+      return headReplaced + tailReplaced;
+    }
   }
-  return replaced;
+
+  return _replacePlaceholdersWithContext(line, example);
+}
+
+// Placeholders inside {} blocks become raw values,
+// Placeholders outside {} blocks become parameters (wrapped with {})
+String _replacePlaceholdersWithContext(
+  String line,
+  Map<String, String> example,
+) {
+  final result = StringBuffer();
+  var i = 0;
+  var braceDepth = 0;
+
+  while (i < line.length) {
+    // Track brace depth to know if we're inside a parameter block
+    if (line[i] == '{') {
+      braceDepth++;
+      result.write('{');
+      i++;
+    } else if (line[i] == '}') {
+      braceDepth--;
+      result.write('}');
+      i++;
+    } else if (line[i] == '<') {
+      // Check if this is a placeholder
+      var foundPlaceholder = false;
+      for (final key in example.keys) {
+        final placeholder = '<$key>';
+        if (i + placeholder.length <= line.length &&
+            line.substring(i, i + placeholder.length) == placeholder) {
+          // Found a placeholder
+          if (braceDepth > 0) {
+            // Inside a parameter block - use raw value
+            result.write(example[key]);
+          } else {
+            // Outside parameter blocks - wrap with {}
+            result.write('{${example[key]}}');
+          }
+          i += placeholder.length;
+          foundPlaceholder = true;
+          break;
+        }
+      }
+      if (!foundPlaceholder) {
+        result.write(line[i]);
+        i++;
+      }
+    } else {
+      result.write(line[i]);
+      i++;
+    }
+  }
+
+  return result.toString();
 }

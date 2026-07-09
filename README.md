@@ -32,7 +32,7 @@ Feature: Counter
         Then I see {'0'} text
 ```
 
-Now ask `built_value` to generate Dart files for you. You may do this with the command:
+Now ask `build_runner` to generate Dart files for you. You may do this with the command:
 ```
 dart run build_runner watch --delete-conflicting-outputs
 ```
@@ -71,7 +71,7 @@ Feature: Counter
     Then I see {'1'} text
 ```
 
-`Backround` and `After` sections are optional. A `Background` allows you to add some context to the scenarios that follow it. It can contain one or more Given steps, which are run before each scenario. An `After` scenarion run even if a test fails, to ensure that it has a chance to clean up after itself. Most probably you don't need to use this keyword.
+`Background` and `After` sections are optional. A `Background` allows you to add some context to the scenarios that follow it. It can contain one or more Given steps, which are run before each scenario. An `After` scenarion run even if a test fails, to ensure that it has a chance to clean up after itself. Most probably you don't need to use this keyword.
 
 Each feature file must have one or more `Feature:`s. Features become test groups in Flutter tests.
 
@@ -204,35 +204,6 @@ List of predefined steps:
 * I tap {..} text
 * The app is running
 
-If you want to use predefined steps without having them in your `steps` folder then you may create a `build.yaml` file in the root of your project with the following content (see the `example` folder):
-```yaml
-targets:
-  $default:
-    builders:
-      bdd_widget_test|featureBuilder:
-        options:
-          externalSteps:
-            - package:bdd_widget_test/step/i_see_text.dart
-            - package:bdd_widget_test/step/i_dont_see_text.dart
-            - package:bdd_widget_test/step/i_see_multiple_texts.dart
-            - package:bdd_widget_test/step/i_tap_text.dart
-            - package:bdd_widget_test/step/i_see_icon.dart
-            - package:bdd_widget_test/step/i_dont_see_icon.dart
-            - package:bdd_widget_test/step/i_tap_icon.dart
-            - package:bdd_widget_test/step/i_see_rich_text.dart
-            - package:bdd_widget_test/step/i_dont_see_rich_text.dart
-            - package:bdd_widget_test/step/i_see_widget.dart
-            - package:bdd_widget_test/step/i_dont_see_widget.dart
-            - package:bdd_widget_test/step/i_see_exactly_widgets.dart
-            - package:bdd_widget_test/step/i_see_multiple_widgets.dart
-            - package:bdd_widget_test/step/i_enter_into_input_field.dart
-            - package:bdd_widget_test/step/i_see_disabled_elevated_button.dart
-            - package:bdd_widget_test/step/i_see_enabled_elevated_button.dart
-            - package:bdd_widget_test/step/i_wait.dart
-            - package:bdd_widget_test/step/i_dismiss_the_page.dart
-```
-That will tell the plugin to reuse steps from the plugin itself and do not put them into your code.
-
 ## Hooks
 If you want to add hooks, you need to add the addHooks flag to the `build.yaml`. This will generate a file that allows you to handle a beforeAll, afterAll, beforeEach and afterEach call.
 These hooks will be generated per directory, just like the steps. Also like with the steps, you can define a directory in the build.yaml to define one set location for the hooks. These hooks will then be used everywhere.
@@ -328,12 +299,13 @@ targets:
 
 If you have many packages you might want to reuse the whole list of external steps. For that you'll have to create a `bdd_options.yaml` file in the root folder of your project with the following content: 
 ```yaml
-include: package:bdd_widget_test/bdd_options.yaml # if you want to reuse default steps as well
+include: package:<package_a>/bdd_options.yaml # will include all steps defined in bdd_options.yaml of package_a
 externalSteps:
-  - package:<your_package>/<your_step>.dart
+  - package:<package_b>/<your_step>.dart
+  - package:<package_c>/<your_step>.dart
 ```
 
-Alternatively, ff you need just to include an external config, use the `include` option in the `build.yaml` config:
+Alternatively, if you need just to include an external config, use the `include` option in the `build.yaml` config:
 ```yaml
 targets:
   $default:
@@ -342,6 +314,33 @@ targets:
         options:
           include: package:<your_package>/bdd_options.yaml
 ```
+
+### How to add custom headers to generated files?
+
+You can add custom header lines (imports, comments, etc.) to all generated step files **and feature files** using the `customHeaders` option in the `build.yaml` file:
+```yaml
+targets:
+  $default:
+    builders:
+      bdd_widget_test|featureBuilder:
+        options:
+          customHeaders:
+            - "import 'package:flutter_test/flutter_test.dart';"
+            - "import 'package:patrol/patrol.dart';"
+            - "// Custom test utilities"
+            - "import 'package:my_custom_package/my_helper.dart';"
+```
+
+This is useful when you need to:
+- Use custom test frameworks (like Patrol) instead of the default flutter_test
+- Import custom helper classes or utilities in all your generated files
+- Add specific packages that your tests will commonly use
+- Include custom test utilities, mocks, or constants
+- Add custom comments or documentation to generated files
+
+The custom headers will be added to:
+- **Feature files**: After any data table imports, replacing the default flutter/material and flutter_test imports
+- **Step files**: After any data table imports, replacing the default flutter_test import
 
 ### How to group steps in a single project?
 
@@ -425,6 +424,9 @@ targets:
           testerName: $
           testerType: PatrolIntegrationTester
           includeIntegrationTestBinding: false
+          customHeaders:
+            - "import 'package:flutter_test/flutter_test.dart';"
+            - "import 'package:patrol/patrol.dart';"
 ```
 
 Since Patrol version 3.0.0, `IntegrationTestWidgetsFlutterBinding.ensureInitialized` must not be called. Set `includeIntegrationTestBinding` to `false`.

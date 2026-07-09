@@ -1,6 +1,6 @@
 import 'package:bdd_widget_test/src/feature_file.dart';
 import 'package:bdd_widget_test/src/generator_options.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Hook file generation ', () {
@@ -15,7 +15,7 @@ void main() {
     expect(feature.hookFile, isNotNull);
     expect(
       feature.hookFile?.fileName,
-      'test/sub-feature/feature/./hook/hooks.dart',
+      'test/sub-feature/feature/hook/hooks.dart',
     );
     expect(feature.hookFile?.import, './hook/hooks.dart');
   });

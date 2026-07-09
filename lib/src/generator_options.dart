@@ -1,5 +1,6 @@
 import 'package:bdd_widget_test/src/util/fs.dart';
 import 'package:bdd_widget_test/src/util/isolate_helper.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 const _defaultTestMethodName = 'testWidgets';
@@ -20,15 +21,17 @@ class GeneratorOptions {
     String? hookFolderName,
     this.include,
     bool? includeIntegrationTestBinding,
-  })  : stepFolder = stepFolderName ?? _stepFolderName,
-        relativeToTestFolder = relativeToTestFolder ?? true,
-        testMethodName = testMethodName ?? _defaultTestMethodName,
-        testerType = testerType ?? _defaultTesterType,
-        testerName = testerName ?? _defaultTesterName,
-        addHooks = addHooks ?? false,
-        hookFolderName = hookFolderName ?? _hookFolderName,
-        externalSteps = externalSteps ?? const [],
-        includeIntegrationTestBinding = includeIntegrationTestBinding ?? true;
+    List<String>? customHeaders,
+  }) : stepFolder = stepFolderName ?? _stepFolderName,
+       relativeToTestFolder = relativeToTestFolder ?? true,
+       testMethodName = testMethodName ?? _defaultTestMethodName,
+       testerType = testerType ?? _defaultTesterType,
+       testerName = testerName ?? _defaultTesterName,
+       addHooks = addHooks ?? false,
+       hookFolderName = hookFolderName ?? _hookFolderName,
+       externalSteps = externalSteps ?? const [],
+       includeIntegrationTestBinding = includeIntegrationTestBinding ?? true,
+       customHeaders = customHeaders ?? const [];
 
   factory GeneratorOptions.fromMap(Map<String, dynamic> json) =>
       GeneratorOptions(
@@ -40,11 +43,13 @@ class GeneratorOptions {
         relativeToTestFolder: json['relativeToTestFolder'] as bool?,
         addHooks: json['addHooks'] as bool?,
         hookFolderName: json['hookFolderName'] as String?,
-        include: json['include'] is String
-            ? [(json['include'] as String)]
-            : (json['include'] as List?)?.cast<String>(),
+        include:
+            json['include'] is String
+                ? [(json['include'] as String)]
+                : (json['include'] as List?)?.cast<String>(),
         includeIntegrationTestBinding:
             json['includeIntegrationTestBinding'] as bool?,
+        customHeaders: (json['customHeaders'] as List?)?.cast<String>() ?? [],
       );
 
   final String stepFolder;
@@ -57,26 +62,37 @@ class GeneratorOptions {
   final List<String>? include;
   final List<String> externalSteps;
   final bool includeIntegrationTestBinding;
+  final List<String> customHeaders;
 }
 
-Future<GeneratorOptions> flattenOptions(GeneratorOptions options) async {
+Future<GeneratorOptions> flattenOptions(
+  GeneratorOptions options, [
+  String? packageRoot,
+]) async {
   if (options.include?.isEmpty ?? true) {
     return options;
   }
   var resultOptions = options;
   for (final include in resultOptions.include!) {
-    final includedOptions = await _readFromPackage(include);
+    final includedOptions = await _readFromPackage(include, packageRoot);
     final newOptions = merge(resultOptions, includedOptions);
-    resultOptions = await flattenOptions(newOptions);
+    resultOptions = await flattenOptions(newOptions, packageRoot);
   }
 
   return resultOptions;
 }
 
-Future<GeneratorOptions> _readFromPackage(String packageUri) async {
-  final uri = await resolvePackageUri(
-    Uri.parse(packageUri),
-  );
+Future<GeneratorOptions> _readFromPackage(
+  String packageUri, [
+  String? packageRoot,
+]) async {
+  final parsed = Uri.parse(packageUri);
+  // A relative include is resolved against the owning package root so it works
+  // under `build_runner --workspace`.
+  if (!parsed.isAbsolute && parsed.scheme.isEmpty && packageRoot != null) {
+    return readFromUri(Uri.file(p.join(packageRoot, packageUri)));
+  }
+  final uri = await resolvePackageUri(parsed);
   if (uri == null) {
     throw Exception('Could not read $packageUri');
   }
@@ -89,24 +105,24 @@ GeneratorOptions readFromUri(Uri uri) {
   return GeneratorOptions.fromMap(doc.value.cast());
 }
 
-GeneratorOptions merge(GeneratorOptions a, GeneratorOptions b) =>
-    GeneratorOptions(
-      testMethodName: a.testMethodName != _defaultTestMethodName
+GeneratorOptions merge(
+  GeneratorOptions a,
+  GeneratorOptions b,
+) => GeneratorOptions(
+  testMethodName:
+      a.testMethodName != _defaultTestMethodName
           ? a.testMethodName
           : b.testMethodName,
-      testerType:
-          a.testerType != _defaultTesterType ? a.testerType : b.testerType,
-      testerName:
-          a.testerName != _defaultTesterName ? a.testerName : b.testerName,
-      stepFolderName:
-          a.stepFolder != _stepFolderName ? a.stepFolder : b.stepFolder,
-      relativeToTestFolder: a.relativeToTestFolder && b.relativeToTestFolder,
-      externalSteps: [...a.externalSteps, ...b.externalSteps],
-      addHooks: a.addHooks || b.addHooks,
-      hookFolderName: a.hookFolderName != _hookFolderName
-          ? a.hookFolderName
-          : b.hookFolderName,
-      include: b.include,
-      includeIntegrationTestBinding:
-          a.includeIntegrationTestBinding || b.includeIntegrationTestBinding,
-    );
+  testerType: a.testerType != _defaultTesterType ? a.testerType : b.testerType,
+  testerName: a.testerName != _defaultTesterName ? a.testerName : b.testerName,
+  stepFolderName: a.stepFolder != _stepFolderName ? a.stepFolder : b.stepFolder,
+  relativeToTestFolder: a.relativeToTestFolder && b.relativeToTestFolder,
+  externalSteps: [...a.externalSteps, ...b.externalSteps],
+  addHooks: a.addHooks || b.addHooks,
+  hookFolderName:
+      a.hookFolderName != _hookFolderName ? a.hookFolderName : b.hookFolderName,
+  include: b.include,
+  includeIntegrationTestBinding:
+      a.includeIntegrationTestBinding || b.includeIntegrationTestBinding,
+  customHeaders: [...a.customHeaders, ...b.customHeaders],
+);
